@@ -39,6 +39,8 @@ public class StrStr {
 class StrStr2 {
     /**
      * Robin Karp rolling hash solution
+     * Limitation is that it works for smaller string/haystack and small pattern(here 26 lower case alphabets) as it will
+     * lead to overflow of even BigInteger
      *
      * TC: O(m + n)
      * SC: O(1)
@@ -69,5 +71,70 @@ class StrStr2 {
             }
         }
         return -1;
+    }
+}
+
+//------------------------------------ Solution 3 -----------------------------------
+class StrStr3 {
+    /**
+     * KMP algorithm solution where we find prepare the longest prefix suffix array on given pattern (leave at-least one
+     * char while finding longest as we need use this to not move back i pointer on longer haystack string). prefix is in
+     * pattern and suffix is in longer string, j resets to previous index's lps(efficient shrink) and lps building while
+     * we have match and move to bigger string in pattern also expands the window by j++ and i++ hence efficient expansion.
+     * Hence finding lps on small pattern is O(m) TC and we are never moving back i pointer on the longer string so TC from
+     * longer string is O(n)
+     *
+     * TC: O(m + n)
+     * SC: O(m) for lps array of length for small pattern/needle string
+     */
+    public int strStr(String haystack, String needle) {
+        int m = needle.length();
+        int n = haystack.length();
+        if (m > n) {
+            return -1;
+        }
+
+        //build longest prefix suffix array for the needle string
+        int[] lps = buildLongestPrefixSuffix(needle);
+
+        int j = 0;
+        int i = 0;
+        while (i < n) { //while not all chars from haystack processed
+            if (haystack.charAt(i) == needle.charAt(j)) { //if chars in both strings at given pointer match expand window
+                i++;
+                j++;
+
+                if (j == m) { // if all chars in needle are processed, return first occurrence
+                    return i - j;
+                }
+            } else if (haystack.charAt(i) != needle.charAt(j) && j > 0) { //take j back till prefix in needle and suffix in haystack match
+                j = lps[j - 1];
+            } else { //this is (haystack.charAt(i) != needle.charAt(j) && j == 0) // no match, explore new char from haystack for matching
+                i++;
+            }
+        }
+
+        return -1; // no match found
+    }
+
+    private int[] buildLongestPrefixSuffix(String pattern) {
+        int[] lps = new int[pattern.length()];
+        lps[0] = 0;
+        int j = 0;
+        int i = 1;
+
+        while (i < pattern.length()) {
+            if (pattern.charAt(j) == pattern.charAt(i)) {
+                j++;
+                lps[i] = j;
+                i++;
+            } else if (pattern.charAt(j) != pattern.charAt(i) && j > 0) {
+                j = lps[j - 1];
+            } else { // this is (pattern.charAt(j) != pattern.charAt(i) && j == 0)
+                lps[i] = 0;
+                i++;
+            }
+        }
+        return lps;
     }
 }
